@@ -3,28 +3,29 @@ package be.swsb.coderetreat;
 public class Tile {
     private final int xCoordinate;
     private final int yCoordinate;
+    private TileType type;
 
-    private TileRepresentation representation;
 
     public Tile(int x, int y){
         this.xCoordinate = x;
         this.yCoordinate = y;
-        this.representation = TileRepresentation.WATER;
+        this.type = TileType.WATER;
     }
 
-    public void setRepresentation(TileRepresentation representation) {
-        this.representation = representation;
+    public boolean isWater(){
+        return TileType.WATER == type;
     }
 
-    public int getxCoordinate() {
-        return xCoordinate;
+    public void markAsShip(){
+        this.type = TileType.SHIP;
     }
 
-    public int getyCoordinate() {
-        return yCoordinate;
+    public TileType getType() {
+        return type;
     }
 
-    public TileRepresentation getRepresentation() {
-        return representation;
+    public enum TileType {
+        WATER,
+        SHIP
     }
 }

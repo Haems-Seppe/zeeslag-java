@@ -1,11 +1,8 @@
 package be.swsb.coderetreat;
 
-import static be.swsb.coderetreat.TileRepresentation.*;
-import static be.swsb.coderetreat.TileRepresentation.WATER;
-
 public class Battlefield {
 
-    private static int battlefieldSize = 10;
+    private final static int battlefieldSize = 10;
     public Tile[][] ocean = new Tile[battlefieldSize][battlefieldSize];
 
     public Battlefield() {
@@ -15,7 +12,7 @@ public class Battlefield {
     private void createEmptyOcean() {
         for (int i = 0; i < battlefieldSize; i++) {
             for (int j = 0; j < battlefieldSize; j++) {
-                this.ocean[i][j] = new Tile(i,j);
+                this.ocean[i][j] = new Tile(i, j);
             }
         }
     }
@@ -24,7 +21,12 @@ public class Battlefield {
         StringBuilder oceanString = new StringBuilder();
         for (int i = 0; i < battlefieldSize; i++) {
             for (int j = 0; j < battlefieldSize; j++) {
-                oceanString.append(ocean[i][j].getRepresentation().getCharacter());
+                oceanString.append(
+                        switch (ocean[i][j].getType()) {
+                            case WATER -> "O";
+                            case SHIP -> "S";
+                        }
+                );
             }
             oceanString.append("\n");
         }
@@ -32,33 +34,39 @@ public class Battlefield {
     }
 
     public void placeShip(int coordinateX, int coordinateY, Direction direction, ShipType ship) {
-        if(!shipCanBePlaced(coordinateX, coordinateY, direction, ship)){
-            throw new IllegalArgumentException("This is not a valid place for your ship.");
-        };
+        validateShipCanBePlaced(coordinateX, coordinateY, direction, ship);
+        boolean isHorizontal = direction == Direction.HORIZONTAL;
+
         for (int i = 0; i < ship.getSize(); i++) {
-            int x = direction == Direction.HORIZONTAL ? coordinateX : coordinateX + i;
-            int y = direction == Direction.HORIZONTAL ? coordinateY + i : coordinateY;
-            ocean[x][y].setRepresentation(SHIP);
+            int x = isHorizontal ? coordinateX : coordinateX + i;
+            int y = isHorizontal ? coordinateY + i : coordinateY;
+            ocean[x][y].markAsShip();
         }
     }
 
-    private boolean shipCanBePlaced(int coordinateX, int coordinateY, Direction direction, ShipType type) {
-        return checkIfOutOfBounds(coordinateX, coordinateY, direction, type) && checkIfSpotsAreEmpty(coordinateX, coordinateY, direction, type);
+    private void validateShipCanBePlaced(int coordinateX, int coordinateY, Direction direction, ShipType type) {
+        checkIfOutOfBounds(coordinateX, coordinateY, direction, type);
+        checkIfSpotsAreEmpty(coordinateX, coordinateY, direction, type);
     }
 
-    private boolean checkIfOutOfBounds(int coordinateX, int coordinateY, Direction direction, ShipType type) {
-        return direction == Direction.HORIZONTAL ? (coordinateX + type.getSize()) <= battlefieldSize && coordinateY <= battlefieldSize : coordinateY + type.getSize() <= battlefieldSize && coordinateX <= battlefieldSize;
+    private void checkIfOutOfBounds(int coordinateX, int coordinateY, Direction direction, ShipType type) {
+        boolean isHorizontal = direction == Direction.HORIZONTAL;
+
+        if (isHorizontal ? (coordinateX + type.getSize()) > battlefieldSize || coordinateY > battlefieldSize : coordinateY +
+                type.getSize() > battlefieldSize || coordinateX > battlefieldSize) {
+            throw new IllegalArgumentException("These coordinates are out of bound.");
+        }
     }
 
-    private boolean checkIfSpotsAreEmpty(int coordinateX, int coordinateY, Direction direction, ShipType type) {
+    private void checkIfSpotsAreEmpty(int coordinateX, int coordinateY, Direction direction, ShipType type) {
+        boolean isHorizontal = direction == Direction.HORIZONTAL;
         for (int i = 0; i < type.getSize(); i++) {
-            int x = direction == Direction.HORIZONTAL ? coordinateX : coordinateX + i;
-            int y = direction == Direction.HORIZONTAL ? coordinateY + i : coordinateY;
+            int x = isHorizontal ? coordinateX : coordinateX + i;
+            int y = isHorizontal ? coordinateY + i : coordinateY;
 
-            if (ocean[x][y].getRepresentation() != WATER) {
-                return false;
+            if (!ocean[x][y].isWater()) {
+                throw new IllegalStateException("There is already a ship on this tile."); //add cordinates
             }
         }
-        return true;
     }
 }

@@ -93,15 +93,15 @@ public class BattleshipTest {
 
         assertThatThrownBy(() -> battlefield.placeShip(11, 0, Direction.VERTICAL, ShipType.SUBMARINE))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("This is not a valid place for your ship.");
+                .hasMessage("These coordinates are out of bound.");
     }
     @Test
-    public void aShipCanNotBePlacedOnTopOfAnotherBoat() {
+    public void aShipCanNotBePlacedOnTopOfAnotherShip() {
         Battlefield battlefield = new Battlefield();
         battlefield.placeShip(0, 0, Direction.VERTICAL, ShipType.SUBMARINE);
 
         assertThatThrownBy(() -> battlefield.placeShip(0, 0, Direction.VERTICAL, ShipType.SUBMARINE))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("This is not a valid place for your ship.");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("There is already a ship on this tile.");
     }
 }
