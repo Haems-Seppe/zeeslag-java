@@ -8,7 +8,7 @@ public enum Direction {
         return switch (abbreviation.toLowerCase()) {
             case "h" -> HORIZONTAL;
             case "v" -> VERTICAL;
-            default -> throw new IllegalArgumentException("Invalid direction abbreviation. Please enter 'h' or 'v'.");
+            default -> throw new IllegalArgumentException("Invalid direction abbreviation");
         };
     }
 }
