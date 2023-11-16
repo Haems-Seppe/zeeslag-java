@@ -95,10 +95,10 @@ public class Game {
         System.out.println("Welcome to Battleship!");
         System.out.println(firstMover.getName() + ", it is your turn to place your ships!");
         placeAllShips(player1);
-        Helper.SwitchTurn();
+        Helper.HideConsoleOutput();
         System.out.println(secondMover.getName() + ", it is your turn to place your ships!");
         placeAllShips(player2);
-        Helper.SwitchTurn();
+        Helper.HideConsoleOutput();
         System.out.println("Both players have placed their ships!");
         setSHOOTINGPhase();
         while (!gameIsOver()) {
@@ -106,7 +106,7 @@ public class Game {
             if (gameIsOver()) {
                 break;
             }
-            Helper.SwitchTurn();
+            Helper.HideConsoleOutput();
             Player temp = firstMover;
             firstMover = secondMover;
             secondMover = temp;

@@ -38,7 +38,7 @@ public class Helper {
         return scanner.nextLine();
     }
 
-    public static void SwitchTurn() {
+    public static void HideConsoleOutput() {
         System.out.println("Switching players... look away so you don't see your opponents screen!");
         try {
             Thread.sleep(5000);
