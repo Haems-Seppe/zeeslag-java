@@ -100,7 +100,7 @@ public class Game {
         Helper.HideConsoleOutput();
         System.out.println("Both players have placed their ships!");
         setSHOOTINGPhase();
-        while (!gamePhase.equals(GamePhase.GAME_OVER)) {
+        while (gamePhase.equals(GamePhase.SHOOTING)) {
             playTurn(firstMover, secondMover);
             if (isGameOver()) {
                 break;
