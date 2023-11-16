@@ -113,8 +113,9 @@ public class BattleshipTest {
         game.handleShot(new Coordinate(1, 1), player2);
         game.handleShot(new Coordinate(1, 0), player2);
         game.handleShot(new Coordinate(1, 2), player2);
+        assertThat(game.isGameOver()).isTrue();
 
-        assertThat(game.gameIsOver()).isTrue();
+        assertThat(game.gamePhase).isEqualTo(Game.GamePhase.GAME_OVER);
     }
 
     @Test
@@ -151,8 +152,7 @@ public class BattleshipTest {
         player1.getBattlefield().placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
         player2.getBattlefield().placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
         Game game = new Game(player1, player2);
-
-        assertThat(game.gameIsOver()).isFalse();
+        assertThat(game.isGameOver()).isFalse();
         assertThat(game.gamePhase).isEqualTo(Game.GamePhase.PLACING_SHIPS);
     }
 

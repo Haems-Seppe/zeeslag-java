@@ -10,21 +10,20 @@ import static be.swsb.coderetreat.Coordinate.GetYCoordinate;
 public class Game {
     private final Player player1, player2;
     private static final Helper helper = new Helper();
-    public boolean gameIsOver;
     public GamePhase gamePhase;
 
     public Game(Player player1, Player player2) {
         this.player1 = player1;
         this.player2 = player2;
         this.gamePhase = GamePhase.PLACING_SHIPS;
-        this.gameIsOver = false;
     }
 
-    public boolean gameIsOver() {
+    public boolean isGameOver() {
         if (player1.allShipsAreSunk() || player2.allShipsAreSunk()) {
-            gameIsOver = true;
+            gamePhase = GamePhase.GAME_OVER;
+            return true;
         }
-        return gameIsOver;
+        return false;
     }
 
     public void placeAllShips(Player player) {
@@ -101,9 +100,9 @@ public class Game {
         Helper.HideConsoleOutput();
         System.out.println("Both players have placed their ships!");
         setSHOOTINGPhase();
-        while (!gameIsOver()) {
+        while (!gamePhase.equals(GamePhase.GAME_OVER)) {
             playTurn(firstMover, secondMover);
-            if (gameIsOver()) {
+            if (isGameOver()) {
                 break;
             }
             Helper.HideConsoleOutput();
@@ -111,15 +110,9 @@ public class Game {
             firstMover = secondMover;
             secondMover = temp;
         }
-        if (player1.allShipsAreSunk()) {
-            System.out.println("You sunk all of your opponent's ships, Game Over! " + player2.getName() + " wins!");
-            System.out.println("Here's your opponent's battlefield:");
-            System.out.println(renderBattlefield(player1, false));
-        } else {
-            System.out.println("You sunk all of your opponent's ships, Game Over! " + player1.getName() + " wins!");
-            System.out.println("Here's your opponent's battlefield:");
-            System.out.println(renderBattlefield(player2, false));
-        }
+        System.out.println("You sunk all of your opponent's ships, Game Over! " + firstMover.getName() + " wins!");
+        System.out.println("Here's your opponent's battlefield:");
+        System.out.println(renderBattlefield(secondMover, false));
     }
 
     private void playTurn(Player currentPlayer, Player opponent) {
@@ -147,6 +140,7 @@ public class Game {
 
     public enum GamePhase {
         PLACING_SHIPS,
-        SHOOTING
+        SHOOTING,
+        GAME_OVER
     }
 }
