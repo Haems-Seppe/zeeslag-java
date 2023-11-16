@@ -1,17 +1,24 @@
 package be.swsb.coderetreat;
 
-
 import org.junit.jupiter.api.Test;
 
+import static be.swsb.coderetreat.Direction.VERTICAL;
+import static be.swsb.coderetreat.Game.renderBattlefield;
+import static be.swsb.coderetreat.Ship.ShipType.DESTROYER;
+import static be.swsb.coderetreat.Ship.ShipType.SUBMARINE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class BattleshipTest {
 
     @Test
-    public void renderEmptyOceanReturnsStringOfOcean() {
-        Battlefield battlefield = new Battlefield();
-        String ocean = battlefield.render();
+    public void whenAPlayerShootsAndMissesNothingHappens() {
+        Player player = new Player("Seppe");
+        player.placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        Game game = new Game(player, new Player("Seppe"));
+        game.setSHOOTINGPhase();
+        game.handleShot(new Coordinate(1, 1), player);
+        String ocean = renderBattlefield(player, false);
         assertThat(ocean).isEqualTo(
                 """
                         OOOOOOOOOO
@@ -21,20 +28,22 @@ public class BattleshipTest {
                         OOOOOOOOOO
                         OOOOOOOOOO
                         OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
+                        SOOOOOOOOO
+                        SOOOOOOOOO
+                        SOOOOOOOOO
                         """);
     }
 
     @Test
-    public void aPatrolBoatIsPlacedHorizontallyWithAGivenCoordinate(){
-        Battlefield battlefield = new Battlefield();
-        battlefield.placeShip(0,0, Direction.HORIZONTAL, ShipType.PATROL_BOAT);
-        String ocean = battlefield.render();
+    public void whenAPlayerShootsAndHitsAShipThenTileIsMarked() {
+        Player player = new Player("Seppe");
+        player.placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        Game game = new Game(player, new Player("Seppe"));
+        game.setSHOOTINGPhase();
+        game.handleShot(new Coordinate(0, 2), player);
+        String ocean = renderBattlefield(player, false);
         assertThat(ocean).isEqualTo(
                 """
-                        SSOOOOOOOO
                         OOOOOOOOOO
                         OOOOOOOOOO
                         OOOOOOOOOO
@@ -42,66 +51,131 @@ public class BattleshipTest {
                         OOOOOOOOOO
                         OOOOOOOOOO
                         OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
+                        HOOOOOOOOO
+                        SOOOOOOOOO
+                        SOOOOOOOOO
                         """);
     }
 
     @Test
-    public void aPatrolBoatIsPlacedVerticallyWithAGivenCoordinate(){
-        Battlefield battlefield = new Battlefield();
-        battlefield.placeShip(0,0, Direction.VERTICAL, ShipType.PATROL_BOAT);
-        String ocean = battlefield.render();
-        assertThat(ocean).isEqualTo(
-                """
-                        SOOOOOOOOO
-                        SOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        """);
-    }
-
-    @Test
-    public void aSubmarineIsPlacedVerticallyWithAGivenCoordinate(){
-        Battlefield battlefield = new Battlefield();
-        battlefield.placeShip(0,0, Direction.VERTICAL, ShipType.SUBMARINE);
-        String ocean = battlefield.render();
-        assertThat(ocean).isEqualTo(
-                """
-                        SOOOOOOOOO
-                        SOOOOOOOOO
-                        SOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        OOOOOOOOOO
-                        """);
-    }
-
-    @Test
-    public void aShipCanOnlyBePlacedWithinTheOcean() {
-        Battlefield battlefield = new Battlefield();
-
-        assertThatThrownBy(() -> battlefield.placeShip(11, 0, Direction.VERTICAL, ShipType.SUBMARINE))
+    public void whenAPlayerShootsATileWithInvalidArgumentsAnExceptionIsThrown() {
+        Player player = new Player("Seppe");
+        player.placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        Game game = new Game(player, new Player("Seppe"));
+        game.setSHOOTINGPhase();
+        assertThatThrownBy(() -> game.handleShot(new Coordinate(10, 1), player))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("These coordinates are out of bound.");
+                .hasMessage("These coordinates are out of bounds.");
     }
-    @Test
-    public void aShipCanNotBePlacedOnTopOfAnotherShip() {
-        Battlefield battlefield = new Battlefield();
-        battlefield.placeShip(0, 0, Direction.VERTICAL, ShipType.SUBMARINE);
 
-        assertThatThrownBy(() -> battlefield.placeShip(0, 0, Direction.VERTICAL, ShipType.SUBMARINE))
+    @Test
+    public void whenAPlayerShootsAndHitsTheLastStandingPartOfAshipThenShipIsSunk() {
+        Player player = new Player("Seppe");
+        player.placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        Game game = new Game(player, new Player("Seppe"));
+        game.setSHOOTINGPhase();
+        game.handleShot(new Coordinate(0, 1), player);
+        game.handleShot(new Coordinate(0, 0), player);
+        game.handleShot(new Coordinate(0, 2), player);
+
+
+        String ocean = renderBattlefield(player, false);
+        assertThat(ocean).isEqualTo(
+                """
+                        OOOOOOOOOO
+                        OOOOOOOOOO
+                        OOOOOOOOOO
+                        OOOOOOOOOO
+                        OOOOOOOOOO
+                        OOOOOOOOOO
+                        OOOOOOOOOO
+                        XOOOOOOOOO
+                        XOOOOOOOOO
+                        XOOOOOOOOO
+                        """);
+
+    }
+
+    @Test
+    public void whenAllShipsOfAPlayerAreSunkTheGameHasEnded() {
+        Player player1 = new Player("Seppe");
+        Player player2 = new Player("Michiel");
+        Game game = new Game(player1, player2);
+
+        player1.getBattlefield().placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        player2.getBattlefield().placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        player2.getBattlefield().placeShip(new Coordinate(1, 0), VERTICAL, DESTROYER);
+        game.setSHOOTINGPhase();
+        game.handleShot(new Coordinate(0, 1), player2);
+        game.handleShot(new Coordinate(0, 0), player2);
+        game.handleShot(new Coordinate(0, 2), player2);
+
+        game.handleShot(new Coordinate(1, 1), player2);
+        game.handleShot(new Coordinate(1, 0), player2);
+        game.handleShot(new Coordinate(1, 2), player2);
+
+        assertThat(game.gameIsOver()).isTrue();
+    }
+
+    @Test
+    public void aBattlefieldCanBeShownWithOnlyTheShotTiles() {
+        Player player1 = new Player("Seppe");
+        Player player2 = new Player("Michiel");
+        player1.placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        player2.placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        Game game = new Game(player1, player2);
+        game.setSHOOTINGPhase();
+        game.handleShot(new Coordinate(0, 0), player2);
+        game.handleShot(new Coordinate(0, 1), player2);
+
+        String ocean = renderBattlefield(player2, true);
+        assertThat(ocean).isEqualTo(
+                """
+                        ??????????
+                        ??????????
+                        ??????????
+                        ??????????
+                        ??????????
+                        ??????????
+                        ??????????
+                        ??????????
+                        H?????????
+                        H?????????
+                        """);
+    }
+
+    @Test
+    public void theGameStartsWithThePlacementPhase() {
+        Player player1 = new Player("Seppe");
+        Player player2 = new Player("Michiel");
+        player1.getBattlefield().placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        player2.getBattlefield().placeShip(new Coordinate(0, 0), VERTICAL, SUBMARINE);
+        Game game = new Game(player1, player2);
+
+        assertThat(game.gameIsOver()).isFalse();
+        assertThat(game.gamePhase).isEqualTo(Game.GamePhase.PLACING_SHIPS);
+    }
+
+    @Test
+    public void whileTheGameIsInPlacementPhaseShootingIsNotAllowed() {
+        Player player1 = new Player("Seppe");
+        Player player2 = new Player("Michiel");
+        Game game = new Game(player1, player2);
+
+        assertThatThrownBy(() -> game.handleShot(new Coordinate(0, 0), player2))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("There is already a ship on this tile.");
+                .hasMessage("You can't shoot yet!");
+    }
+
+    @Test
+    public void whileTheGameIsInShootingPhasePlacingShipsIsNotAllowed() {
+        Player player1 = new Player("Seppe");
+        Player player2 = new Player("Michiel");
+        Game game = new Game(player1, player2);
+        game.setSHOOTINGPhase();
+
+        assertThatThrownBy(() -> game.placeAllShips(player2))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("You can't place a ship in this stage of the game!");
     }
 }

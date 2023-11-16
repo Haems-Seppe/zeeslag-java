@@ -1,9 +1,19 @@
 package be.swsb.coderetreat;
 
+import be.swsb.coderetreat.Ship.Ship;
+import be.swsb.coderetreat.Ship.ShipFactory;
+import be.swsb.coderetreat.Ship.ShipType;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static be.swsb.coderetreat.Coordinate.GetYCoordinate;
+
 public class Battlefield {
 
-    private final static int battlefieldSize = 10;
     public Tile[][] ocean = new Tile[battlefieldSize][battlefieldSize];
+    public final static int battlefieldSize = 10;
+    private final List<Ship> ships = new ArrayList<>();
 
     public Battlefield() {
         createEmptyOcean();
@@ -12,61 +22,73 @@ public class Battlefield {
     private void createEmptyOcean() {
         for (int i = 0; i < battlefieldSize; i++) {
             for (int j = 0; j < battlefieldSize; j++) {
-                this.ocean[i][j] = new Tile(i, j);
+                this.ocean[j][i] = new Tile(new Coordinate(i, GetYCoordinate(j)));
             }
         }
     }
 
-    public String render() {
-        StringBuilder oceanString = new StringBuilder();
-        for (int i = 0; i < battlefieldSize; i++) {
-            for (int j = 0; j < battlefieldSize; j++) {
-                oceanString.append(
-                        switch (ocean[i][j].getType()) {
-                            case WATER -> "O";
-                            case SHIP -> "S";
-                        }
-                );
+    public void placeShip(Coordinate startPosition, Direction direction, ShipType shipType) {
+        validateCoordinate(startPosition);
+        checkIfShipFitsBattlefield(startPosition, direction, shipType.getSize());
+
+        Ship ship = ShipFactory.createShip(shipType, direction, startPosition);
+
+        checkIfTilesAreFree(ship);
+        markTilesAsShip(ship);
+        ships.add(ship);
+    }
+
+    public void checkIfAShipIsSunk() {
+        ships.forEach(ship -> {
+            if (ship.getCoordinates().stream().allMatch(coordinate -> getTile(coordinate).isHit())) {
+                System.out.println("You sunk the " + ship.getShipType().name() + "!");
+                markTilesAsSunk(ship);
+                ship.markAsSunk();
             }
-            oceanString.append("\n");
-        }
-        return oceanString.toString();
+        });
     }
 
-    public void placeShip(int coordinateX, int coordinateY, Direction direction, ShipType ship) {
-        validateShipCanBePlaced(coordinateX, coordinateY, direction, ship);
-        boolean isHorizontal = direction == Direction.HORIZONTAL;
+    public boolean checkIfAllShipsAreSunk() {
+        return ships.stream().allMatch(Ship::isSunk);
+    }
 
-        for (int i = 0; i < ship.getSize(); i++) {
-            int x = isHorizontal ? coordinateX : coordinateX + i;
-            int y = isHorizontal ? coordinateY + i : coordinateY;
-            ocean[x][y].markAsShip();
+    public static void validateCoordinate(Coordinate coordinate) {
+        if (coordinate.xCoordinate >= battlefieldSize || coordinate.yCoordinate >= battlefieldSize || coordinate.xCoordinate < 0 || coordinate.yCoordinate < 0) {
+            throw new IllegalArgumentException("These coordinates are out of bounds.");
         }
     }
 
-    private void validateShipCanBePlaced(int coordinateX, int coordinateY, Direction direction, ShipType type) {
-        checkIfOutOfBounds(coordinateX, coordinateY, direction, type);
-        checkIfSpotsAreEmpty(coordinateX, coordinateY, direction, type);
-    }
-
-    private void checkIfOutOfBounds(int coordinateX, int coordinateY, Direction direction, ShipType type) {
-        boolean isHorizontal = direction == Direction.HORIZONTAL;
-
-        if (isHorizontal ? (coordinateX + type.getSize()) > battlefieldSize || coordinateY > battlefieldSize : coordinateY +
-                type.getSize() > battlefieldSize || coordinateX > battlefieldSize) {
-            throw new IllegalArgumentException("These coordinates are out of bound.");
+    private void markTilesAsSunk(Ship ship) {
+        if (!ship.isSunk()) {
+            List<Coordinate> coordinates = ship.getCoordinates();
+            coordinates.forEach(coordinate -> getTile(coordinate).markAsSunk());
         }
     }
 
-    private void checkIfSpotsAreEmpty(int coordinateX, int coordinateY, Direction direction, ShipType type) {
-        boolean isHorizontal = direction == Direction.HORIZONTAL;
-        for (int i = 0; i < type.getSize(); i++) {
-            int x = isHorizontal ? coordinateX : coordinateX + i;
-            int y = isHorizontal ? coordinateY + i : coordinateY;
+    private void markTilesAsShip(Ship ship) {
+        List<Coordinate> coordinates = ship.getCoordinates();
+        coordinates.forEach(coordinate -> getTile(coordinate).markAsShip());
+    }
 
-            if (!ocean[x][y].isWater()) {
-                throw new IllegalStateException("There is already a ship on this tile."); //add cordinates
+    private void checkIfTilesAreFree(Ship ship) {
+        List<Coordinate> coordinates = ship.getCoordinates();
+        coordinates.forEach(coordinate -> {
+            if (!getTile(coordinate).isWater()) {
+                throw new IllegalStateException("This ship overlaps with another ship.");
             }
+        });
+    }
+
+
+    private void checkIfShipFitsBattlefield(Coordinate startPosition, Direction direction, int size) {
+        boolean isHorizontal = direction == Direction.HORIZONTAL;
+        int axisToCheck = isHorizontal ? startPosition.xCoordinate : startPosition.yCoordinate;
+        if (axisToCheck + size >= battlefieldSize) {
+            throw new IllegalArgumentException("This ship is too large to be placed here.");
         }
+    }
+
+    private Tile getTile(Coordinate coordinate) {
+        return ocean[GetYCoordinate(coordinate.yCoordinate)][coordinate.xCoordinate];
     }
 }
